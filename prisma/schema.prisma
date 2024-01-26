@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model address {
+  address_id Int        @id @default(autoincrement())
+  address    String     @db.VarChar(100)
+  supplier   supplier[]
+}
+
+model purchase {
+  purchase_id      Int                @id @default(autoincrement())
+  supplier_id      Int
+  tdy_price_id     Int
+  rubber_pound     Float
+  percentage       Float
+  dry_rubber_pound Float
+  total_amount     Float
+  purchase_date    DateTime           @db.DateTime(0)
+  year             String             @db.VarChar(45)
+  month            String             @db.VarChar(45)
+  is_print         Int                @db.TinyInt
+  supplier         supplier           @relation(fields: [supplier_id], references: [supplier_id], onDelete: NoAction, onUpdate: NoAction, map: "supplier_id")
+  todayprice       todayprice         @relation(fields: [tdy_price_id], references: [tdy_price_id], onDelete: NoAction, onUpdate: NoAction, map: "tdy_price_id")
+  purchase_voucher purchase_voucher[]
+
+  @@index([supplier_id], map: "supplier_id_idx")
+  @@index([tdy_price_id], map: "tdy_price_id_idx")
+}
+
+model supplier {
+  supplier_id   Int        @id @default(autoincrement())
+  supplier_name String     @db.VarChar(50)
+  ph_no         String?    @db.VarChar(40)
+  address_id    Int
+  purchase      purchase[]
+  address       address    @relation(fields: [address_id], references: [address_id], onDelete: NoAction, onUpdate: NoAction, map: "address_id")
+
+  @@index([address_id], map: "address_id_idx")
+}
+
+model todayprice {
+  tdy_price_id Int        @id @default(autoincrement())
+  tdy_price    Float
+  date         DateTime   @db.DateTime(0)
+  purchase     purchase[]
+}
+
+model purchase_voucher {
+  purchase_id Int
+  voucher_id  String   @db.VarChar(200)
+  purchase    purchase @relation(fields: [purchase_id], references: [purchase_id], onDelete: NoAction, onUpdate: NoAction, map: "purchase_vc")
+  voucher     voucher  @relation(fields: [voucher_id], references: [voucher_id], onDelete: NoAction, onUpdate: NoAction, map: "purchase_vc_vc")
+
+  @@id([purchase_id, voucher_id])
+  @@index([voucher_id], map: "purchase_vc_vc_idx")
+}
+
+model voucher {
+  voucher_id       String             @id @db.VarChar(200)
+  voucher_date     DateTime           @db.DateTime(0)
+  total_amount     Float
+  loan             Float
+  paid_amount      Float
+  purchase_voucher purchase_voucher[]
+}
